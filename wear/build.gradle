@@ -3,14 +3,14 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-
 android {
-    compileSdk 31
+    namespace 'com.maize.spotlight'
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.maize.spotlight"
         minSdk 25
-        targetSdk 31
+        targetSdk 35
         versionCode 3115201
         versionName "1.5.2"
     }
@@ -20,11 +20,24 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << "-Xlint:deprecation"
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-wearable:17.1.0'
-    implementation 'com.google.android.support:wearable:2.8.1'
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    compileOnly 'com.google.android.wearable:wearable:2.8.1'
+    implementation project(':watchface')
+    implementation 'androidx.core:core:1.13.1'
+    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
+    implementation 'com.google.android.support:wearable:2.9.0'
+    implementation 'com.google.android.gms:play-services-base:18.5.0'
+    compileOnly 'com.google.android.wearable:wearable:2.9.0'
 }

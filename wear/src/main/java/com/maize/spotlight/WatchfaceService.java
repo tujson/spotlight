@@ -39,8 +39,8 @@ import java.util.TimeZone;
  */
 public class WatchfaceService extends CanvasWatchFaceService {
 
-    public static final int LEFT_COMPLICATION_ID = 100;
-    public static final int RIGHT_COMPLICATION_ID = 101;
+    public static final int LEFT_COMPLICATION_ID = 300;
+    public static final int RIGHT_COMPLICATION_ID = 301;
     private static final int[] COMPLICATION_IDS = {LEFT_COMPLICATION_ID, RIGHT_COMPLICATION_ID};
 
     @Override
@@ -66,10 +66,7 @@ public class WatchfaceService extends CanvasWatchFaceService {
         private Paint mHourPaint;
         private Paint mTenMinutePaint;
         private Paint mHourTextPaint;
-        private Paint mFallbackTextPaint;
-        private Paint mFallbackTitlePaint;
-        private Paint mFallbackBoxPaint;
-        private Paint mFallbackBgPaint;
+        private Paint mComplicationTextPaint;
 
         private int mBackgroundColor;
         private int mAccentColor;
@@ -83,8 +80,9 @@ public class WatchfaceService extends CanvasWatchFaceService {
         private final Rect mLeftBounds = new Rect();
         private final Rect mRightBounds = new Rect();
 
-        private final SimpleDateFormat mDateFormat = new SimpleDateFormat("EEE d", Locale.getDefault());
         private final SimpleDateFormat mMonthFormat = new SimpleDateFormat("MMM", Locale.getDefault());
+        private final SimpleDateFormat mDayFormat = new SimpleDateFormat("dd", Locale.getDefault());
+        private final SimpleDateFormat mDayOfWeekFormat = new SimpleDateFormat("EEE", Locale.getDefault());
 
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
@@ -134,26 +132,8 @@ public class WatchfaceService extends CanvasWatchFaceService {
             mHourTextPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 20, metrics));
             mHourTextPaint.setTextAlign(Paint.Align.CENTER);
 
-            mFallbackTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mFallbackTextPaint.setColor(Color.WHITE);
-            mFallbackTextPaint.setStyle(Style.FILL);
-            mFallbackTextPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            mFallbackTextPaint.setTextAlign(Paint.Align.CENTER);
-
-            mFallbackTitlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mFallbackTitlePaint.setColor(0x88FFFFFF);
-            mFallbackTitlePaint.setStyle(Style.FILL);
-            mFallbackTitlePaint.setTypeface(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
-            mFallbackTitlePaint.setTextAlign(Paint.Align.CENTER);
-
-            mFallbackBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mFallbackBgPaint.setColor(0xEE111111);
-            mFallbackBgPaint.setStyle(Style.FILL);
-
-            mFallbackBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mFallbackBoxPaint.setColor(0x33FFFFFF);
-            mFallbackBoxPaint.setStyle(Style.STROKE);
-            mFallbackBoxPaint.setStrokeWidth(2f);
+            mComplicationTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mComplicationTextPaint.setTextAlign(Paint.Align.CENTER);
 
             mCalendar = Calendar.getInstance();
 
@@ -173,19 +153,19 @@ public class WatchfaceService extends CanvasWatchFaceService {
             mComplicationDrawableArray.put(RIGHT_COMPLICATION_ID, rightDrawable);
 
             setActiveComplications(COMPLICATION_IDS);
-            setDefaultSystemComplicationProvider(LEFT_COMPLICATION_ID, SystemProviders.DATE, ComplicationData.TYPE_SHORT_TEXT);
-            setDefaultSystemComplicationProvider(RIGHT_COMPLICATION_ID, SystemProviders.WATCH_BATTERY, ComplicationData.TYPE_RANGED_VALUE);
         }
 
         private void initComplicationDrawable(ComplicationDrawable drawable) {
-            drawable.setTextColorActive(Color.WHITE);
-            drawable.setTitleColorActive(0xAAFFFFFF);
-            drawable.setTextTypefaceActive(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
+            drawable.setTextColorActive(0xCCFFFFFF);
+            drawable.setTitleColorActive(0x88FFFFFF);
+            drawable.setTextTypefaceActive(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             drawable.setTitleTypefaceActive(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
-            drawable.setBackgroundColorActive(0xEE111111);
-            drawable.setBorderColorActive(0x33FFFFFF);
-            drawable.setBorderRadiusActive(12);
-            drawable.setBorderWidthActive(1);
+            drawable.setBackgroundColorActive(Color.TRANSPARENT);
+            drawable.setBorderColorActive(Color.TRANSPARENT);
+            drawable.setTextColorAmbient(0x77FFFFFF);
+            drawable.setTitleColorAmbient(0x55FFFFFF);
+            drawable.setBackgroundColorAmbient(Color.TRANSPARENT);
+            drawable.setBorderColorAmbient(Color.TRANSPARENT);
             drawable.setHighlightColorActive(mAccentColor);
             drawable.setRangedValuePrimaryColorActive(mAccentColor);
             drawable.setRangedValueSecondaryColorActive(0x33FFFFFF);
@@ -214,9 +194,28 @@ public class WatchfaceService extends CanvasWatchFaceService {
                                 data.getTapAction().send();
                             } catch (PendingIntent.CanceledException ignored) {
                             }
+                        } else {
+                            launchCalendarApp();
                         }
                         break;
                     }
+                }
+            }
+        }
+
+        private void launchCalendarApp() {
+            try {
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_APP_CALENDAR);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception e) {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setData(android.provider.CalendarContract.CONTENT_URI);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception ignored) {
                 }
             }
         }
@@ -380,7 +379,7 @@ public class WatchfaceService extends CanvasWatchFaceService {
         }
 
         private void drawComplications(Canvas canvas, int centerX, int centerY, int size, float degrees) {
-            int compWidth = (int) (size * 0.26f);
+            int compWidth = (int) (size * 0.28f);
             int compHeight = (int) (size * 0.13f);
 
             float rad = (float) Math.toRadians(degrees);
@@ -390,50 +389,70 @@ public class WatchfaceService extends CanvasWatchFaceService {
             float vy = ux;
 
             // Dynamically position complications in the open space opposite the needle pointer
-            int leftCenterX = (int) (centerX - ux * 0.22f * size - vx * 0.18f * size);
-            int leftCenterY = (int) (centerY - uy * 0.22f * size - vy * 0.18f * size);
+            int leftCenterX = (int) (centerX - ux * 0.23f * size - vx * 0.19f * size);
+            int leftCenterY = (int) (centerY - uy * 0.23f * size - vy * 0.19f * size);
             mLeftBounds.set(leftCenterX - compWidth / 2, leftCenterY - compHeight / 2, leftCenterX + compWidth / 2, leftCenterY + compHeight / 2);
 
-            int rightCenterX = (int) (centerX - ux * 0.22f * size + vx * 0.18f * size);
-            int rightCenterY = (int) (centerY - uy * 0.22f * size + vy * 0.18f * size);
+            int rightCenterX = (int) (centerX - ux * 0.23f * size + vx * 0.19f * size);
+            int rightCenterY = (int) (centerY - uy * 0.23f * size + vy * 0.19f * size);
             mRightBounds.set(rightCenterX - compWidth / 2, rightCenterY - compHeight / 2, rightCenterX + compWidth / 2, rightCenterY + compHeight / 2);
 
             long currentTime = System.currentTimeMillis();
 
-            // Left complication
+            // Left complication: Default is "Nov 02"
             ComplicationData leftData = mComplicationDataArray.get(LEFT_COMPLICATION_ID);
             ComplicationDrawable leftDrawable = mComplicationDrawableArray.get(LEFT_COMPLICATION_ID);
-            if (leftData != null && leftData.getType() != ComplicationData.TYPE_NOT_CONFIGURED && leftData.getType() != ComplicationData.TYPE_EMPTY) {
+            if (leftData != null && leftData.getType() == ComplicationData.TYPE_EMPTY) {
+                // User explicitly set left slot to empty
+            } else if (leftData != null && leftData.getType() != ComplicationData.TYPE_NOT_CONFIGURED) {
                 leftDrawable.setBounds(mLeftBounds);
                 leftDrawable.draw(canvas, currentTime);
             } else {
-                drawFallbackComplication(canvas, mLeftBounds, mMonthFormat.format(mCalendar.getTime()).toUpperCase(), mDateFormat.format(mCalendar.getTime()).toUpperCase(), size);
+                drawDateComplication(canvas, mLeftBounds, size, isInAmbientMode());
             }
 
-            // Right complication
+            // Right complication: Default is Day of the week ("Mon", "Fri")
             ComplicationData rightData = mComplicationDataArray.get(RIGHT_COMPLICATION_ID);
             ComplicationDrawable rightDrawable = mComplicationDrawableArray.get(RIGHT_COMPLICATION_ID);
-            if (rightData != null && rightData.getType() != ComplicationData.TYPE_NOT_CONFIGURED && rightData.getType() != ComplicationData.TYPE_EMPTY) {
+            if (rightData != null && rightData.getType() == ComplicationData.TYPE_EMPTY) {
+                // User explicitly set right slot to empty
+            } else if (rightData != null && rightData.getType() != ComplicationData.TYPE_NOT_CONFIGURED) {
                 rightDrawable.setBounds(mRightBounds);
                 rightDrawable.draw(canvas, currentTime);
             } else {
-                drawFallbackComplication(canvas, mRightBounds, "BATTERY", "85%", size);
+                drawDayOfWeekComplication(canvas, mRightBounds, size, isInAmbientMode());
             }
         }
 
-        private void drawFallbackComplication(Canvas canvas, Rect bounds, String title, String text, int size) {
-            float cornerRadius = bounds.height() / 2f;
-            RectF rectF = new RectF(bounds);
-            canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, mFallbackBgPaint);
-            canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, mFallbackBoxPaint);
+        private void drawDateComplication(Canvas canvas, Rect bounds, int size, boolean inAmbient) {
+            String month = mMonthFormat.format(mCalendar.getTime());
+            String day = mDayFormat.format(mCalendar.getTime());
+            String text = month + " " + day; // e.g. "Nov 02"
+            drawUnobtrusiveText(canvas, bounds, text, size, inAmbient);
+        }
 
-            float textSp = size * 0.034f;
-            float titleSp = size * 0.022f;
-            mFallbackTextPaint.setTextSize(textSp);
-            mFallbackTitlePaint.setTextSize(titleSp);
+        private void drawDayOfWeekComplication(Canvas canvas, Rect bounds, int size, boolean inAmbient) {
+            String text = mDayOfWeekFormat.format(mCalendar.getTime()); // e.g. "Mon"
+            drawUnobtrusiveText(canvas, bounds, text, size, inAmbient);
+        }
 
-            canvas.drawText(title, bounds.centerX(), bounds.centerY() - textSp * 0.15f, mFallbackTitlePaint);
-            canvas.drawText(text, bounds.centerX(), bounds.centerY() + textSp * 0.85f, mFallbackTextPaint);
+        private void drawUnobtrusiveText(Canvas canvas, Rect bounds, String text, int size, boolean inAmbient) {
+            float textSize = size * 0.046f;
+            mComplicationTextPaint.setTextSize(textSize);
+
+            if (inAmbient) {
+                mComplicationTextPaint.setColor(0x77FFFFFF);
+                mComplicationTextPaint.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+            } else {
+                mComplicationTextPaint.setColor(0xCCFFFFFF); // 80% opacity soft white: unobtrusive and sleek
+                mComplicationTextPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            }
+
+            Paint.FontMetrics fm = mComplicationTextPaint.getFontMetrics();
+            float x = bounds.centerX();
+            float y = bounds.centerY() - (fm.descent + fm.ascent) / 2f;
+
+            canvas.drawText(text, x, y, mComplicationTextPaint);
         }
 
         private void updateWatchFaceStyle() {

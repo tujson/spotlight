@@ -42,6 +42,10 @@ public class WatchfaceActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mWatchfaceView = new WatchfaceView(this);
+        mWatchfaceView.setOnClickListener(v -> {
+            Intent intent = new Intent(WatchfaceActivity.this, WatchfaceConfigActivity.class);
+            startActivity(intent);
+        });
         setContentView(mWatchfaceView);
 
         ContextCompat.registerReceiver(this, mTimeInfoReceiver, INTENT_FILTER_TIME, ContextCompat.RECEIVER_EXPORTED);
